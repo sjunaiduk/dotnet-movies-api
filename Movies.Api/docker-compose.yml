@@ -1,0 +1,11 @@
+﻿version: '1'
+
+services:
+  db:
+    image: 'postgres:latest'
+    environment:
+       - POSTGRES_USER=syed
+       - POSTGRES_PASSWORD=password
+       - POSTGRES_DB=movies
+    ports:
+       - '5432:5432'

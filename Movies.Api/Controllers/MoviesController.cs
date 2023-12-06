@@ -29,9 +29,11 @@ namespace Movies.Api.Controllers
 
         [HttpGet]
         [Route(ApiEndpoints.Movies.Get)]
-        public async Task<IActionResult> Get(Guid id)
+        public async Task<IActionResult> Get(string idOrSlug)
         {
-            var movie = await _movieRepository.GetByIdAsync(id);
+            var movie = Guid.TryParse(idOrSlug, out Guid id) ? 
+                await _movieRepository.GetByIdAsync(id) : 
+                await _movieRepository.GetBySlugAsync(idOrSlug);
 
             if (movie is null)
             {
@@ -54,7 +56,7 @@ namespace Movies.Api.Controllers
 
             var movieResponse = movie.ToMovieResponse();
 
-            return CreatedAtAction(nameof(Get), new {id = movie.Id}, movieResponse);
+            return CreatedAtAction(nameof(Get), new {idOrSlug = movie.Slug}, movieResponse);
         }
 
         [HttpPut]
@@ -82,7 +84,7 @@ namespace Movies.Api.Controllers
             {
                 return NotFound();
             }
-            return NoContent();
+            return Ok();
         }
     }
 }
