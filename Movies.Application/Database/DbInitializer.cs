@@ -43,5 +43,14 @@ public class DbInitializer
                                         using btree(slug)
                                       """);
 
+        await connection.ExecuteAsync("""
+                create table if not exists ratings (
+                user_id uuid,
+                movie_id uuid references movies(id),
+                rating int,
+                primary key (user_id, movie_id)
+                )
+            """);
+
     }
 }
