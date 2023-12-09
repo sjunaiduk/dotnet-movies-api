@@ -19,7 +19,7 @@ namespace Movies.Application.Models
         private string ComputeSlug()
         {
             // Convert to lowercase
-            string slug = Title.ToLowerInvariant();
+            var slug = Title.ToLowerInvariant();
 
             // Remove all special characters
             slug = Regex.Replace(slug, @"[^a-z0-9\s-]", "");
