@@ -15,19 +15,25 @@ namespace Movies.Application.Repositories
             _dbConnectionFactory = dbConnectionFactory;
         }
 
-        public async Task<Movie?> GetByIdAsync(Guid id, CancellationToken token = default)
+        public async Task<Movie?> GetByIdAsync(Guid id, Guid? userId = default, CancellationToken token = default)
         {
             using var connection = await _dbConnectionFactory.GetConnection(token);
       
             const string sql = """
-                                 SELECT m.*, STRING_AGG(g.genre, ',') as genres FROM MOVIES m
+                                 SELECT m.*, STRING_AGG(g.genre, ',') as genres,
+                                 ROUND(AVG(r.rating),1) as rating,
+                                 myr.rating as userrating
+                                
+                                 FROM MOVIES m
                                  LEFT JOIN MOVIES_GENRES_MAPPING mapping on m.id = mapping.movie_id
                                  LEFT JOIN GENRES g on g.id = mapping.genre_id
+                                 LEFT JOIN ratings r on m.id = r.movie_id
+                                 LEFT JOIN ratings myr on m.id = myr.movie_id AND myr.user_id=@UserId
                                  WHERE m.id = @Id
-                                 GROUP BY m.id
+                                 GROUP BY m.id, myr.rating
                                """;
             var movie = await connection.QuerySingleOrDefaultAsync(new CommandDefinition(sql,
-                new { id }, cancellationToken :token));
+                new { id, userId }, cancellationToken :token));
             if (movie is null)
             {
                 return null;
@@ -38,6 +44,8 @@ namespace Movies.Application.Repositories
                 Id = id,
                 Title = movie.title,
                 YearOfRelease = movie.yearofrelease,
+                UserRating = (int?)movie.userrating,
+                Rating = (float?)movie.rating,
                 Genres = string.IsNullOrEmpty(movie.genres) ?
                 new List<string>()
                 :
@@ -45,19 +53,25 @@ namespace Movies.Application.Repositories
             };
         }
 
-        public async Task<Movie?> GetBySlugAsync(string slug, CancellationToken token = default)
+        public async Task<Movie?> GetBySlugAsync(string slug, Guid?  userId = default, CancellationToken token = default)
         {
             using var connection = await _dbConnectionFactory.GetConnection(token);
 
             const string sql = """
-                                 SELECT m.*, STRING_AGG(g.genre, ',') as genres FROM MOVIES m
+                                 SELECT m.*, STRING_AGG(DISTINCT g.genre, ',') as genres,
+                                 ROUND(AVG(r.rating),1) as rating,
+                                 myr.rating as userrating
+                                
+                                 FROM MOVIES m
                                  LEFT JOIN MOVIES_GENRES_MAPPING mapping on m.id = mapping.movie_id
                                  LEFT JOIN GENRES g on g.id = mapping.genre_id
-                                 WHERE m.slug = @Slug
-                                 GROUP BY m.id
+                                 LEFT JOIN ratings r on m.id = r.movie_id
+                                 LEFT JOIN ratings myr on m.id = myr.movie_id AND myr.user_id=@UserId
+                                 WHERE m.Slug=@Slug
+                                 GROUP BY m.id, myr.rating
                                """;
             var movie = await connection.QuerySingleOrDefaultAsync(new CommandDefinition(sql,
-                new { slug }, cancellationToken: token));
+                new { slug, userId }, cancellationToken: token));
             if (movie is null)
             {
                 return null;
@@ -68,6 +82,8 @@ namespace Movies.Application.Repositories
                 Id = movie.id,
                 Title = movie.title,
                 YearOfRelease = movie.yearofrelease,
+                UserRating = (int?)movie.userrating,
+                Rating = (float?)movie.rating,
                 Genres = string.IsNullOrEmpty(movie.genres) ?
                 new List<string>()
                 :
@@ -96,22 +112,29 @@ namespace Movies.Application.Repositories
 
         }
 
-        public async Task<IEnumerable<Movie>> GetAllAsync( CancellationToken token = default)
+        public async Task<IEnumerable<Movie>> GetAllAsync(Guid? userId = default, CancellationToken token = default)
         {
            using var connection = await _dbConnectionFactory.GetConnection(token);
 
             const string sql = """
-                                 SELECT m.*, STRING_AGG(g.genre, ',') as genres FROM MOVIES m
+                                 SELECT m.*, STRING_AGG(DISTINCT g.genre, ',') as genres,
+                                 ROUND(AVG(r.rating),1) as rating,
+                                 myr.rating as userrating
+                                 FROM MOVIES m
                                  LEFT JOIN MOVIES_GENRES_MAPPING mapping on m.id = mapping.movie_id
                                  LEFT JOIN GENRES g on g.id = mapping.genre_id
-                                 GROUP BY m.id
+                                 LEFT JOIN ratings r on m.id = r.movie_id
+                                 LEFT JOIN ratings myr on m.id = myr.movie_id AND myr.user_id=@UserId
+                                 GROUP BY m.id, myr.rating
                                """;
-            var movies = await connection.QueryAsync(new CommandDefinition(sql, cancellationToken: token));
+            var movies = await connection.QueryAsync(new CommandDefinition(sql,new {userId }, cancellationToken: token));
             return movies.Select(m => new Movie
             {
                 Id = m.id,
                 Title = m.title,
                 YearOfRelease = m.yearofrelease,
+                Rating = (float?)m.rating,
+                UserRating = (int?)m.userrating,
                 Genres = string.IsNullOrEmpty(m.genres) ? new List<string>() 
                     :
                     Enumerable.ToList(m.genres.Split(","))

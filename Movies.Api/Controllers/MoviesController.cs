@@ -24,7 +24,11 @@ namespace Movies.Api.Controllers
         [Route(ApiEndpoints.Movies.GetAll)]
         public async Task<IActionResult> GetAll(CancellationToken token)
         {
-            var movies = await _movieService.GetAllAsync(token);
+            var userClaim = HttpContext.User.Claims.SingleOrDefault(c => c.Type == "userid");
+            Guid? userId = Guid.TryParse(userClaim?.Value, out var userIdClaim) ? userIdClaim : null;
+
+            
+            var movies = await _movieService.GetAllAsync(userId,token);
             var moviesResponse = movies.ToMoviesResponse();
             return Ok(moviesResponse);
         }
@@ -33,9 +37,13 @@ namespace Movies.Api.Controllers
         [Route(ApiEndpoints.Movies.Get)]
         public async Task<IActionResult> Get(string idOrSlug, CancellationToken token)
         {
+            var userClaim = HttpContext.User.Claims.SingleOrDefault(c => c.Type == "userid");
+            Guid? userId = Guid.TryParse(userClaim?.Value, out var userIdClaim) ? userIdClaim : null;
+
+
             var movie = Guid.TryParse(idOrSlug, out Guid id) ? 
-                await _movieService.GetByIdAsync(id, token) : 
-                await _movieService.GetBySlugAsync(idOrSlug, token);
+                await _movieService.GetByIdAsync(id,userId, token) : 
+                await _movieService.GetBySlugAsync(idOrSlug,userId, token);
 
             if (movie is null)
             {
@@ -47,7 +55,6 @@ namespace Movies.Api.Controllers
 
             return Ok(movieResponse);
         }
-
 
         [Authorize(AuthConstants.TrustedMemberPolicyName)]
         [HttpPost]

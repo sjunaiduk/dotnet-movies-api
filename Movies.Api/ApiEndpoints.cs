@@ -12,6 +12,17 @@
             public const string GetAll = Base;
             public const string Update = $"{Base}/{{id:guid}}";
             public const string Delete = $"{Base}/{{id:guid}}";
+
+            public const string GetRating = $"{Base}/{{movieId:guid}}/rating";
+
+        }
+
+        public static class Ratings
+        {
+            private const string Base = $"{ApiBase}/ratings";
+            public const string CreateRating = Base;
+            public const string DeleteRating = $"{Base}/{{movieId:guid}}";
+            public const string GetUserRatings = $"{Base}/me";
         }
     }
 }

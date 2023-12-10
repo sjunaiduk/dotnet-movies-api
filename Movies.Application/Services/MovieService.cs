@@ -37,19 +37,19 @@ namespace Movies.Application.Services
             return _repository.DeleteByIdAsync(id, token);
         }
 
-        public Task<IEnumerable<Movie>> GetAllAsync(CancellationToken token = default)
+        public Task<IEnumerable<Movie>> GetAllAsync(Guid? userId = default, CancellationToken token = default)
         {
-            return _repository.GetAllAsync(token);
+            return _repository.GetAllAsync(userId, token);
         }
 
-        public Task<Movie?> GetByIdAsync(Guid id, CancellationToken token = default)
+        public Task<Movie?> GetByIdAsync(Guid id, Guid? userId = default, CancellationToken token = default)
         {
-            return _repository.GetByIdAsync(id,token);
+            return _repository.GetByIdAsync(id,userId, token);
         }
 
-        public Task<Movie?> GetBySlugAsync(string slug, CancellationToken token = default)
+        public Task<Movie?> GetBySlugAsync(string slug, Guid? userId = default, CancellationToken token = default)
         {
-            return _repository.GetBySlugAsync(slug, token);
+            return _repository.GetBySlugAsync(slug, userId, token);
         }
 
         public Task<bool> MovieExistsByIdAsync(Guid id, CancellationToken token = default)
