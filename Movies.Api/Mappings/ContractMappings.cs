@@ -42,12 +42,45 @@ namespace Movies.Api.Mappings
             };
         }
 
-        public static MoviesResponse ToMoviesResponse(this IEnumerable<Movie> movies)
+        public static MoviesResponse ToMoviesResponse(this IEnumerable<Movie> movies,
+            int page,
+            int pageSize,
+            int totalItems)
         {
             return new MoviesResponse
             {
                 Items = movies.Select(movie => movie.ToMovieResponse()),
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = totalItems
+                
             };
+        }
+
+        public static MoviesOptions ToMoviesOptions(this MoviesOptionsRequest options)
+        {
+            return new MoviesOptions
+            {
+                Title = options.Title,
+                YearOfRelease = options.YearOfRelease,
+                SortOrder = options.SortField is null ?
+                SortOrder.Unsorted :
+                options.SortField.StartsWith('-') ?
+                SortOrder.Descending :
+                SortOrder.Ascending,
+                SortField = options.SortField?.Trim('+','-'),
+                PageSize = options.PageSize,
+                Page = options.Page
+          
+
+            };
+        }
+
+        public static MoviesOptions AddUser(this MoviesOptions options,
+            Guid? userId)
+        {
+            options.UserId = userId;
+            return options;
         }
     }
 }

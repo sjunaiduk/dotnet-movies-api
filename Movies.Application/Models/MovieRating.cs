@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Movies.Application.Models
 {
-    public class RatingModel
+    public class MovieRating
     {
         public required Guid Id { get; init; }
 

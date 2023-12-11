@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Movies.Api.Auth;
 using Movies.Application.Services;
 using Movies.Contracts.Requests;
 using Movies.Contracts.Responses;
@@ -37,8 +38,7 @@ namespace Movies.Api.Controllers
         [Authorize]
         public async Task<IActionResult> GetAll(CancellationToken token)
         {
-            var userClaim = HttpContext.User.Claims.SingleOrDefault(c => c.Type == "userid");
-            Guid userId = Guid.Parse(userClaim!.Value);
+            var userId = HttpContext.GetUser();
 
             var ratings = await _ratingService.GetUserRatings(userId, token);
 
@@ -50,8 +50,8 @@ namespace Movies.Api.Controllers
         [Authorize]
         public async Task<IActionResult> Rate([FromBody]CreateRatingRequest request, CancellationToken token)
         {
-            var userClaim = HttpContext.User.Claims.SingleOrDefault(c => c.Type == "userid");
-            Guid userId = Guid.Parse(userClaim!.Value);
+            var userId = HttpContext.GetUser();
+
 
             var success = await _ratingService.CreateRatingAsync(request.MovieId,
                 userId,
@@ -72,8 +72,8 @@ namespace Movies.Api.Controllers
         [Authorize]
         public async Task<IActionResult> DeleteRating([FromRoute] Guid movieId, CancellationToken token)
         {
-            var userClaim = HttpContext.User.Claims.SingleOrDefault(c => c.Type == "userid");
-            Guid userId = Guid.Parse(userClaim!.Value);
+            var userId = HttpContext.GetUser();
+
 
             var success = await _ratingService.DeleteRatingAsync(movieId, userId, token);
 

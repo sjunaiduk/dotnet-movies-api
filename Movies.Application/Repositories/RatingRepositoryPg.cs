@@ -18,7 +18,7 @@ namespace Movies.Application.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<bool> CreateRatingAsync(Guid movieId, Guid userId, int rating, CancellationToken token = default)
+        public async Task<bool> CreateRatingAsync(Guid movieId, Guid? userId, int rating, CancellationToken token = default)
         {
             using var connection = await _connectionFactory.GetConnection();
             var created = await connection.ExecuteAsync(new CommandDefinition(
@@ -31,7 +31,7 @@ namespace Movies.Application.Repositories
             return created > 0;
         }
 
-        public async Task<bool> DeleteRatingAsync(Guid movieId, Guid userId, CancellationToken token = default)
+        public async Task<bool> DeleteRatingAsync(Guid movieId, Guid? userId, CancellationToken token = default)
         {
             using var connection = await _connectionFactory.GetConnection();
             var created = await connection.ExecuteAsync(new CommandDefinition(
@@ -45,10 +45,10 @@ namespace Movies.Application.Repositories
 
         }
 
-        public async Task<RatingModel?> GetRatingAsync(Guid movieId, CancellationToken token = default)
+        public async Task<MovieRating?> GetRatingAsync(Guid movieId, CancellationToken token = default)
         {
             using var connection = await _connectionFactory.GetConnection();
-            var rating = await connection.QuerySingleOrDefaultAsync<RatingModel>(new CommandDefinition(
+            var rating = await connection.QuerySingleOrDefaultAsync<MovieRating>(new CommandDefinition(
                 """
                   SELECT m.*, 
                   ROUND(AVG(r.rating),1) as rating
@@ -60,10 +60,10 @@ namespace Movies.Application.Repositories
             return rating;
         }
 
-        public async Task<IEnumerable<RatingModel>> GetUserRatings(Guid userId, CancellationToken token = default)
+        public async Task<IEnumerable<MovieRating>> GetUserRatings(Guid? userId, CancellationToken token = default)
         {
             using var connection = await _connectionFactory.GetConnection();
-            var ratings = await connection.QueryAsync<RatingModel>(new CommandDefinition(
+            var ratings = await connection.QueryAsync<MovieRating>(new CommandDefinition(
                 """
                 SELECT m.*, 
                        avgRatings.avgRating as rating,

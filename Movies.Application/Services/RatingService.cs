@@ -17,7 +17,7 @@ namespace Movies.Application.Services
             _repository = repository;
         }
 
-        public Task<bool> CreateRatingAsync(Guid movieId, Guid userId, int rating, CancellationToken token = default)
+        public Task<bool> CreateRatingAsync(Guid movieId, Guid? userId, int rating, CancellationToken token = default)
         {
             return _repository.CreateRatingAsync(movieId,
                 userId,
@@ -25,19 +25,19 @@ namespace Movies.Application.Services
                 token);
         }
 
-        public Task<bool> DeleteRatingAsync(Guid movieId, Guid userId, CancellationToken token = default)
+        public Task<bool> DeleteRatingAsync(Guid movieId, Guid? userId, CancellationToken token = default)
         {
             return _repository.DeleteRatingAsync(movieId,
                 userId,
                  token);
         }
 
-        public  Task<RatingModel?> GetRatingAsync(Guid movieId, CancellationToken token = default)
+        public  Task<MovieRating?> GetRatingAsync(Guid movieId, CancellationToken token = default)
         {
             return _repository.GetRatingAsync(movieId, token);
         }
 
-        public Task<IEnumerable<RatingModel>> GetUserRatings(Guid userId, CancellationToken token = default)
+        public Task<IEnumerable<MovieRating>> GetUserRatings(Guid? userId, CancellationToken token = default)
         {
             return _repository.GetUserRatings(userId, token);
         }

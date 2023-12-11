@@ -2,6 +2,7 @@
 using Dapper;
 using Movies.Application.Database;
 using System.Reflection.Metadata;
+using System.ComponentModel.DataAnnotations;
 
 namespace Movies.Application.Repositories
 {
@@ -112,11 +113,21 @@ namespace Movies.Application.Repositories
 
         }
 
-        public async Task<IEnumerable<Movie>> GetAllAsync(Guid? userId = default, CancellationToken token = default)
+        public async Task<IEnumerable<Movie>> GetAllAsync(MoviesOptions options, CancellationToken token = default)
         {
            using var connection = await _dbConnectionFactory.GetConnection(token);
 
-            const string sql = """
+            var sortClause = String.Empty;
+
+            if (options.SortField is not null)
+            {
+                sortClause = $"""
+                        ,m.{options.SortField}
+                        order by m.{options.SortField} {(options.SortOrder == SortOrder.Ascending ?
+                        "asc" : "desc")}
+                        """;
+            }
+             string sql = $"""
                                  SELECT m.*, STRING_AGG(DISTINCT g.genre, ',') as genres,
                                  ROUND(AVG(r.rating),1) as rating,
                                  myr.rating as userrating
@@ -124,10 +135,22 @@ namespace Movies.Application.Repositories
                                  LEFT JOIN MOVIES_GENRES_MAPPING mapping on m.id = mapping.movie_id
                                  LEFT JOIN GENRES g on g.id = mapping.genre_id
                                  LEFT JOIN ratings r on m.id = r.movie_id
-                                 LEFT JOIN ratings myr on m.id = myr.movie_id AND myr.user_id=@UserId
-                                 GROUP BY m.id, myr.rating
+                                 LEFT JOIN ratings myr on m.id = myr.movie_id AND myr.user_id=@userid
+                                 WHERE (@title is null 
+                                 or lower(m.title) like ('%' || @title || '%'))
+                                 and
+                                 (@yearofrelease is null or m.yearofrelease = @yearofrelease)
+                                 GROUP BY m.id, myr.rating {sortClause}
+                                 LIMIT @pagesize 
+                                 OFFSET @offset
                                """;
-            var movies = await connection.QueryAsync(new CommandDefinition(sql,new {userId }, cancellationToken: token));
+            var movies = await connection.QueryAsync(new CommandDefinition(sql,
+                new { userid = options.UserId,
+                    title = options.Title,
+                    yearofrelease = options.YearOfRelease,
+                pagesize = options.PageSize,
+                    offset = (options.Page - 1) * options.PageSize
+                }, cancellationToken: token)) ;
             return movies.Select(m => new Movie
             {
                 Id = m.id,
@@ -261,7 +284,23 @@ namespace Movies.Application.Repositories
             return id;
 
         }
-        
 
+        public async Task<int> TotalItems(MoviesOptions options, CancellationToken token)
+        {
+            using var connection = await _dbConnectionFactory.GetConnection();
+
+            return await connection.QuerySingleAsync<int>(new CommandDefinition(
+                """
+                select count(1) from movies 
+                where
+                (@title is null or lower(title) like ('%' || @title || '%')) and
+                (@yearofrelease is null or yearofrelease = @yearofrelease)
+                """, new
+                {
+                    title = options.Title,
+                    yearofrelease = options.YearOfRelease
+                }, cancellationToken: token));
+
+        }
     }
 }

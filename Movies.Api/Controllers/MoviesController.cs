@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Movies.Api.Auth;
 using Movies.Api.Mappings;
 using Movies.Application.Models;
 using Movies.Application.Repositories;
@@ -22,14 +23,16 @@ namespace Movies.Api.Controllers
 
         [HttpGet]
         [Route(ApiEndpoints.Movies.GetAll)]
-        public async Task<IActionResult> GetAll(CancellationToken token)
+        public async Task<IActionResult> GetAll([FromQuery]MoviesOptionsRequest request,
+            CancellationToken token)
         {
-            var userClaim = HttpContext.User.Claims.SingleOrDefault(c => c.Type == "userid");
-            Guid? userId = Guid.TryParse(userClaim?.Value, out var userIdClaim) ? userIdClaim : null;
 
-            
-            var movies = await _movieService.GetAllAsync(userId,token);
-            var moviesResponse = movies.ToMoviesResponse();
+            var userId = HttpContext.GetUser();
+            var options = request.ToMoviesOptions()
+                .AddUser(userId);
+            var movies = await _movieService.GetAllAsync(options, token);
+            var totalItems = await _movieService.TotalItems(options, token);
+            var moviesResponse = movies.ToMoviesResponse(request.Page,request.PageSize,totalItems);
             return Ok(moviesResponse);
         }
 
@@ -37,8 +40,7 @@ namespace Movies.Api.Controllers
         [Route(ApiEndpoints.Movies.Get)]
         public async Task<IActionResult> Get(string idOrSlug, CancellationToken token)
         {
-            var userClaim = HttpContext.User.Claims.SingleOrDefault(c => c.Type == "userid");
-            Guid? userId = Guid.TryParse(userClaim?.Value, out var userIdClaim) ? userIdClaim : null;
+            var userId = HttpContext.GetUser();
 
 
             var movie = Guid.TryParse(idOrSlug, out Guid id) ? 

@@ -11,7 +11,7 @@ namespace Movies.Application.Services
 
         Task<bool> DeleteByIdAsync(Guid id, CancellationToken token = default);
 
-        Task<IEnumerable<Movie>> GetAllAsync(Guid? userId = default, CancellationToken token = default);
+        Task<IEnumerable<Movie>> GetAllAsync(MoviesOptions options , CancellationToken token = default);
 
         Task<Movie?> UpdateAsync(Movie movie, CancellationToken token = default);
 
@@ -20,5 +20,8 @@ namespace Movies.Application.Services
         Task<bool> MovieExistsByIdAsync(Guid id, CancellationToken token = default);
 
         Task<Guid> CreateGenreAndReturnIdAsync(string genre, CancellationToken token = default);
+
+        Task<int> TotalItems(MoviesOptions options, CancellationToken token);
+
     }
 }
